@@ -1,109 +1,118 @@
-// YOU LUKA — AUTOMATIC GALLERIES
-const galleries={
-  ukraine:{path:"images/ukraine/",title:"Ukraine"},
-  turkey:{path:"images/turkey/",title:"Turkey"}
+// YOU LUKA — SIMPLE & RELIABLE GALLERIES
+// No GitHub API is used. Photos are loaded directly from your folders.
+
+const galleries = {
+  ukraine: {
+    path: "images/ukraine/",
+    title: "Ukraine",
+    photos: [
+      "1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg",
+      "10.jpg","11.jpg","12.jpg","13.jpg","14.jpg","15.jpg","16.jpg","17.jpg",
+      "18.jpg","19.jpg","20.jpg","21.jpg","22.jpg","23.jpg","24.jpg","25.jpg",
+      "26.jpg","27.jpg","28.jpg","29.jpg","30.jpg","31.jpg","32.jpg","33.jpg",
+      "34.jpg","36.png"
+    ]
+  },
+
+  turkey: {
+    path: "images/turkey/",
+    title: "Turkey",
+    photos: [
+      "1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg"
+    ]
+  }
 };
 
-const allImages={};
-const lightbox=document.getElementById("lightbox");
-const lightboxImg=document.getElementById("lightbox-img");
-let currentCategory="",currentIndex=0;
+const allImages = {};
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+let currentCategory = "";
+let currentIndex = 0;
 
-function localPath(category,file){
-  return galleries[category].path + file;
-}
+function renderGallery(category) {
+  const config = galleries[category];
+  const gallery = document.getElementById(`${category}-gallery`);
+  if (!gallery) return;
 
-function renderGallery(category,files){
-  const gallery=document.getElementById(`${category}-gallery`);
-  if(!gallery)return;
-  gallery.innerHTML="";
-  allImages[category]=files.map(file=>localPath(category,file));
+  allImages[category] = [];
 
-  files.forEach((file,index)=>{
-    const img=document.createElement("img");
-    img.src=localPath(category,file);
-    img.alt=`${galleries[category].title} — Photo ${index+1}`;
-    img.loading="lazy";
-    img.onclick=()=>openLightbox(category,index);
-    img.onerror=()=>img.remove();
+  config.photos.forEach((file) => {
+    const url = config.path + file;
+    allImages[category].push(url);
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = `${config.title} — ${file}`;
+    img.loading = "lazy";
+
+    img.addEventListener("click", () => {
+      const index = allImages[category].indexOf(url);
+      openLightbox(category, index);
+    });
+
+    // Hide only a genuinely missing file; the rest continue loading.
+    img.addEventListener("error", () => {
+      img.style.display = "none";
+    });
+
     gallery.appendChild(img);
   });
 }
 
-async function loadGallery(category){
-  const config=galleries[category];
-  const gallery=document.getElementById(`${category}-gallery`);
+renderGallery("ukraine");
+renderGallery("turkey");
 
-  // First try the GitHub folder directly through the Pages site.
-  // This avoids GitHub API/raw URL problems.
-  const fallback=[];
-  const max=100;
+function openLightbox(category, index) {
+  if (!allImages[category] || !allImages[category].length) return;
 
-  // Check numbered files without requiring any code change later.
-  for(let i=1;i<=max;i++){
-    for(const ext of ["jpg","jpeg","png","webp"]){
-      const file=`${i}.${ext}`;
-      const url=localPath(category,file);
-      try{
-        const response=await fetch(url,{method:"HEAD",cache:"no-store"});
-        if(response.ok){
-          fallback.push(file);
-          break;
-        }
-      }catch(e){}
-    }
-  }
-
-  if(fallback.length){
-    renderGallery(category,fallback);
-    return;
-  }
-
-  // Fallback to GitHub API if HEAD checks are blocked.
-  try{
-    const response=await fetch(`https://api.github.com/repos/YouLuka/You-Luka/contents/${config.path}?ref=main`,{cache:"no-store"});
-    if(!response.ok)throw new Error(response.status);
-    const files=await response.json();
-    const photos=files
-      .filter(f=>f.type==="file" && /^\d+\.(jpe?g|png|webp)$/i.test(f.name))
-      .sort((a,b)=>parseInt(a.name)-parseInt(b.name))
-      .map(f=>f.name);
-    renderGallery(category,photos);
-  }catch(e){
-    if(gallery)gallery.innerHTML='<p class="gallery-error">Photos could not be loaded. Please check the image filenames.</p>';
-    console.error(e);
-  }
-}
-
-Object.keys(galleries).forEach(loadGallery);
-
-function openLightbox(category,index){
-  if(!allImages[category]?.[index])return;
-  currentCategory=category;
-  currentIndex=index;
+  currentCategory = category;
+  currentIndex = index;
   updateLightbox();
   lightbox.classList.add("show");
+  document.body.style.overflow = "hidden";
 }
-function updateLightbox(){
-  lightboxImg.src=allImages[currentCategory][currentIndex];
-  lightboxImg.alt=`${galleries[currentCategory].title} — Photo ${currentIndex+1}`;
+
+function updateLightbox() {
+  lightboxImg.src = allImages[currentCategory][currentIndex];
+  lightboxImg.alt =
+    `${galleries[currentCategory].title} — Photo ${currentIndex + 1}`;
 }
-function closeLightbox(){lightbox.classList.remove("show")}
-document.querySelector(".close").onclick=closeLightbox;
-lightbox.onclick=e=>{if(e.target===lightbox)closeLightbox()};
-document.querySelector(".prev").onclick=e=>{
-  e.stopPropagation();
-  currentIndex=(currentIndex-1+allImages[currentCategory].length)%allImages[currentCategory].length;
+
+function closeLightbox() {
+  lightbox.classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+document.querySelector(".close").addEventListener("click", closeLightbox);
+
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) closeLightbox();
+});
+
+document.querySelector(".prev").addEventListener("click", (event) => {
+  event.stopPropagation();
+  const photos = allImages[currentCategory];
+  currentIndex = (currentIndex - 1 + photos.length) % photos.length;
   updateLightbox();
-};
-document.querySelector(".next").onclick=e=>{
-  e.stopPropagation();
-  currentIndex=(currentIndex+1)%allImages[currentCategory].length;
+});
+
+document.querySelector(".next").addEventListener("click", (event) => {
+  event.stopPropagation();
+  const photos = allImages[currentCategory];
+  currentIndex = (currentIndex + 1) % photos.length;
   updateLightbox();
-};
-document.addEventListener("keydown",e=>{
-  if(!lightbox.classList.contains("show"))return;
-  if(e.key==="Escape")closeLightbox();
-  if(e.key==="ArrowLeft")document.querySelector(".prev").click();
-  if(e.key==="ArrowRight")document.querySelector(".next").click();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!lightbox.classList.contains("show")) return;
+
+  if (event.key === "Escape") closeLightbox();
+
+  if (event.key === "ArrowLeft") {
+    document.querySelector(".prev").click();
+  }
+
+  if (event.key === "ArrowRight") {
+    document.querySelector(".next").click();
+  }
 });
