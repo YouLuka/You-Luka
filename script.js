@@ -2,7 +2,7 @@
 // Add numbered JPG files to the folders. No number needs changing here.
 
 const owner = "youluka";
-const repository = "You";
+const repository = "You-Luka";
 const branch = "main";
 
 const galleries = {
