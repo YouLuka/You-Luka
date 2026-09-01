@@ -6,85 +6,36 @@
 <meta name="theme-color" content="#000000">
 <title>You Luka — Documentary Photography</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
-<header>
-  <a href="#home" class="logo">You Luka</a>
-  <nav>
-    <a href="#home">Home</a>
-    <a href="#portfolio">Portfolio</a>
-    <a href="#about">About</a>
-    <a href="#contact">Contact</a>
-  </nav>
+<header class="site-header">
+<a class="logo" href="#home">You Luka</a>
+<nav><a href="#home">Home</a><a href="#portfolio">Portfolio</a><a href="#about">About</a><a href="#contact">Contact</a></nav>
 </header>
 
 <main>
-<section id="home" class="hero">
-  <img src="images/hero.jpg" alt="You Luka">
-</section>
+<section id="home" class="hero"><img id="hero-image" src="images/hero.jpg" alt="You Luka"></section>
 
-<section id="portfolio">
-  <h2>Portfolio</h2>
-
-  <div class="categories">
-    <a href="#ukraine" class="category">
-      <img src="images/ukraine/cover.jpg" alt="Ukraine">
-      <div class="category-overlay">
-        <h3>Ukraine</h3>
-        <span>View gallery</span>
-      </div>
-    </a>
-    <a href="#turkey" class="category">
-      <img src="images/turkey/cover.jpg" alt="Turkey">
-      <div class="category-overlay">
-        <h3>Turkey</h3>
-        <span>View gallery</span>
-      </div>
-    </a>
-  </div>
-
-  <div id="ukraine" class="portfolio-category">
-    <div class="category-header">
-      <h2>Ukraine</h2>
-      <p>Documentary photography</p>
-    </div>
-    <div class="gallery" id="ukraine-gallery"></div>
-  </div>
-
-  <div id="turkey" class="portfolio-category">
-    <div class="category-header">
-      <h2>Turkey</h2>
-      <p>Documentary photography</p>
-    </div>
-    <div class="gallery" id="turkey-gallery"></div>
-  </div>
-</section>
-
-<section id="about">
-  <h2>About</h2>
-  <p>Photography is more than capturing images — it is about preserving emotions, light, and authentic moments.<br><br>
-  My work focuses on natural expressions, meaningful details, and stories that deserve to be remembered.<br><br>
-  Welcome to my world.</p>
-</section>
-
-<section id="contact">
-  <h2>Contact</h2>
-  <a href="https://instagram.com/Yulia.1334" target="_blank" rel="noopener" aria-label="Instagram">
-    <i class="fab fa-instagram"></i>
-  </a>
-</section>
-</main>
-
-<button id="back-to-top" aria-label="Back to top">↑</button>
-
-<div id="lightbox" class="lightbox">
-  <button class="close" aria-label="Close">&times;</button>
-  <button class="prev" aria-label="Previous">&#10094;</button>
-  <img id="lightbox-img" alt="">
-  <button class="next" aria-label="Next">&#10095;</button>
+<section id="portfolio" class="portfolio">
+<h1>Portfolio</h1>
+<div class="categories">
+<a class="category" href="#ukraine"><img src="images/ukraine/1.jpg" alt="Ukraine"><div class="category-info"><h2>Ukraine</h2><span>View gallery</span></div></a>
+<a class="category" href="#turkey"><img src="images/turkey/1.jpg" alt="Turkey"><div class="category-info"><h2>Turkey</h2><span>View gallery</span></div></a>
 </div>
 
+<div id="ukraine" class="gallery-section"><h2>Ukraine</h2><p>Documentary photography</p><div id="ukraine-gallery" class="gallery"></div></div>
+<div id="turkey" class="gallery-section"><h2>Turkey</h2><p>Documentary photography</p><div id="turkey-gallery" class="gallery"></div></div>
+</section>
+
+<section id="about" class="about"><h2>About</h2><p>Photography is more than capturing images — it is about preserving emotions, light, and authentic moments.</p><p>Through every photograph, I aim to tell a story with simplicity, honesty, and elegance.</p></section>
+<section id="contact" class="contact"><h2>Contact</h2><a href="https://instagram.com/Yulia.1334" target="_blank" rel="noopener">Instagram</a></section>
+</main>
+
+<button id="top" aria-label="Back to top">↑</button>
+<div id="lightbox" class="lightbox">
+<button class="close" aria-label="Close">×</button><button class="prev" aria-label="Previous">‹</button>
+<img id="lightbox-img" alt=""><button class="next" aria-label="Next">›</button>
+</div>
 <script src="script.js"></script>
 </body>
 </html>
