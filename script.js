@@ -26,7 +26,7 @@ async function loadGallery(category) {
         const files = await response.json();
 
         const photos = files
-            .filter(file => file.type === "file" && /^\d+\.jpg$/i.test(file.name))
+            .filter(file => file.type === "file" && /^\d+\.(jpe?g|png|webp)$/i.test(file.name))
             .sort((a,b) => parseInt(a.name) - parseInt(b.name));
 
         photos.forEach((file,index) => {
