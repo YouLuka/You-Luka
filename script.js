@@ -1,22 +1,7 @@
 // YOU LUKA — AUTOMATIC GALLERIES
-// Current photos are also used as a fallback if GitHub API is temporarily unavailable.
-// Add numbered JPG/JPEG/PNG/WEBP files to a country folder later.
-
-const owner="YouLuka";
-const repository="You-Luka";
-const branch="main";
-
 const galleries={
-  ukraine:{
-    path:"images/ukraine/",
-    title:"Ukraine",
-    fallback:["1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg","10.jpg","11.jpg","12.jpg","13.jpg","14.jpg","15.jpg","16.jpg","17.jpg","18.jpg","19.jpg","20.jpg","21.jpg","22.jpg","23.jpg","24.jpg","25.jpg","26.jpg","27.jpg","28.jpg","29.jpg","30.jpg","31.jpg","32.jpg","33.jpg","34.jpg","36.png"]
-  },
-  turkey:{
-    path:"images/turkey/",
-    title:"Turkey",
-    fallback:["1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg"]
-  }
+  ukraine:{path:"images/ukraine/",title:"Ukraine"},
+  turkey:{path:"images/turkey/",title:"Turkey"}
 };
 
 const allImages={};
@@ -24,48 +9,69 @@ const lightbox=document.getElementById("lightbox");
 const lightboxImg=document.getElementById("lightbox-img");
 let currentCategory="",currentIndex=0;
 
-function rawUrl(category,file){
-  return `https://raw.githubusercontent.com/${owner}/${repository}/${branch}/${galleries[category].path}${encodeURIComponent(file).replace(/%2F/g,"/")}`;
+function localPath(category,file){
+  return galleries[category].path + file;
 }
 
 function renderGallery(category,files){
   const gallery=document.getElementById(`${category}-gallery`);
   if(!gallery)return;
   gallery.innerHTML="";
-  allImages[category]=files.map(file=>rawUrl(category,file));
+  allImages[category]=files.map(file=>localPath(category,file));
 
   files.forEach((file,index)=>{
     const img=document.createElement("img");
-    img.src=rawUrl(category,file);
+    img.src=localPath(category,file);
     img.alt=`${galleries[category].title} — Photo ${index+1}`;
     img.loading="lazy";
-    img.onerror=()=>img.remove();
     img.onclick=()=>openLightbox(category,index);
+    img.onerror=()=>img.remove();
     gallery.appendChild(img);
   });
 }
 
 async function loadGallery(category){
   const config=galleries[category];
+  const gallery=document.getElementById(`${category}-gallery`);
 
-  // Show the known photos immediately.
-  renderGallery(category,config.fallback);
+  // First try the GitHub folder directly through the Pages site.
+  // This avoids GitHub API/raw URL problems.
+  const fallback=[];
+  const max=100;
 
-  // Then ask GitHub for the current folder contents.
+  // Check numbered files without requiring any code change later.
+  for(let i=1;i<=max;i++){
+    for(const ext of ["jpg","jpeg","png","webp"]){
+      const file=`${i}.${ext}`;
+      const url=localPath(category,file);
+      try{
+        const response=await fetch(url,{method:"HEAD",cache:"no-store"});
+        if(response.ok){
+          fallback.push(file);
+          break;
+        }
+      }catch(e){}
+    }
+  }
+
+  if(fallback.length){
+    renderGallery(category,fallback);
+    return;
+  }
+
+  // Fallback to GitHub API if HEAD checks are blocked.
   try{
-    const url=`https://api.github.com/repos/${owner}/${repository}/contents/${config.path}?ref=${branch}`;
-    const response=await fetch(url,{cache:"no-store"});
-    if(!response.ok)throw new Error(`GitHub API ${response.status}`);
+    const response=await fetch(`https://api.github.com/repos/YouLuka/You-Luka/contents/${config.path}?ref=main`,{cache:"no-store"});
+    if(!response.ok)throw new Error(response.status);
     const files=await response.json();
-
     const photos=files
-      .filter(file=>file.type==="file" && /^\d+\.(jpe?g|png|webp)$/i.test(file.name))
+      .filter(f=>f.type==="file" && /^\d+\.(jpe?g|png|webp)$/i.test(f.name))
       .sort((a,b)=>parseInt(a.name)-parseInt(b.name))
-      .map(file=>file.name);
-
-    if(photos.length)renderGallery(category,photos);
-  }catch(error){
-    console.warn(`Automatic update unavailable for ${config.title}; using current photos.`,error);
+      .map(f=>f.name);
+    renderGallery(category,photos);
+  }catch(e){
+    if(gallery)gallery.innerHTML='<p class="gallery-error">Photos could not be loaded. Please check the image filenames.</p>';
+    console.error(e);
   }
 }
 
