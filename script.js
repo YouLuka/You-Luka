@@ -1,120 +1,63 @@
-const galleries = {
-    ukraine: {
-        total: 40,
-        path: "images/ukraine/",
-        title: "Ukraine"
-    },
+// YOU LUKA — AUTOMATIC GALLERIES
+// Add numbered JPG files to the folders. No number needs changing here.
 
-    turkey: {
-        total: 10,
-        path: "images/turkey/",
-        title: "Turkey"
-    }
+const owner = "youluka";
+const repository = "You";
+const branch = "main";
+
+const galleries = {
+    ukraine: { path: "images/ukraine/", title: "Ukraine" },
+    turkey: { path: "images/turkey/", title: "Turkey" }
 };
 
 const allImages = {};
 
-Object.keys(galleries).forEach(category => {
+async function loadGallery(category) {
     const gallery = document.getElementById(`${category}-gallery`);
     if (!gallery) return;
-
+    const config = galleries[category];
     allImages[category] = [];
 
-    for (let i = 1; i <= galleries[category].total; i++) {
-        const img = document.createElement("img");
+    const apiUrl = `https://api.github.com/repos/${owner}/${repository}/contents/${config.path}?ref=${branch}`;
 
-        img.src = `${galleries[category].path}${i}.jpg`;
-        img.alt = `${galleries[category].title} — Photo ${i}`;
-        img.loading = "lazy";
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("GitHub API error");
+        const files = await response.json();
 
-        const index = allImages[category].length;
-        allImages[category].push(img.src);
+        const photos = files
+            .filter(file => file.type === "file" && /^\d+\.jpg$/i.test(file.name))
+            .sort((a,b) => parseInt(a.name) - parseInt(b.name));
 
-        img.addEventListener("click", () => {
-            openLightbox(category, index);
+        photos.forEach((file,index) => {
+            const img = document.createElement("img");
+            img.src = file.download_url;
+            img.alt = `${config.title} — Photo ${index + 1}`;
+            img.loading = "lazy";
+            allImages[category].push(file.download_url);
+            img.addEventListener("click", () => openLightbox(category,index));
+            gallery.appendChild(img);
         });
-
-        gallery.appendChild(img);
+    } catch(error) {
+        console.error(`Could not load ${config.title} gallery:`,error);
     }
-});
-
-const lightbox = document.getElementById("lightbox");
-const lightboxImg = document.getElementById("lightbox-img");
-
-let currentCategory = "";
-let currentIndex = 0;
-
-function openLightbox(category, index) {
-    currentCategory = category;
-    currentIndex = index;
-    updateLightbox();
-    lightbox.classList.add("show");
 }
 
-function updateLightbox() {
-    lightboxImg.src = allImages[currentCategory][currentIndex];
-    lightboxImg.alt =
-        `${galleries[currentCategory].title} — Photo ${currentIndex + 1}`;
-}
+Object.keys(galleries).forEach(loadGallery);
 
-document.querySelector(".close").addEventListener("click", () => {
-    lightbox.classList.remove("show");
-});
+const lightbox=document.getElementById("lightbox");
+const lightboxImg=document.getElementById("lightbox-img");
+let currentCategory="", currentIndex=0;
 
-lightbox.addEventListener("click", event => {
-    if (event.target === lightbox) {
-        lightbox.classList.remove("show");
-    }
-});
-
-document.querySelector(".prev").addEventListener("click", event => {
-    event.stopPropagation();
-
-    currentIndex--;
-
-    if (currentIndex < 0) {
-        currentIndex = allImages[currentCategory].length - 1;
-    }
-
-    updateLightbox();
-});
-
-document.querySelector(".next").addEventListener("click", event => {
-    event.stopPropagation();
-
-    currentIndex++;
-
-    if (currentIndex >= allImages[currentCategory].length) {
-        currentIndex = 0;
-    }
-
-    updateLightbox();
-});
-
-document.addEventListener("keydown", event => {
-    if (!lightbox.classList.contains("show")) return;
-
-    if (event.key === "Escape") {
-        lightbox.classList.remove("show");
-    }
-
-    if (event.key === "ArrowLeft") {
-        currentIndex--;
-
-        if (currentIndex < 0) {
-            currentIndex = allImages[currentCategory].length - 1;
-        }
-
-        updateLightbox();
-    }
-
-    if (event.key === "ArrowRight") {
-        currentIndex++;
-
-        if (currentIndex >= allImages[currentCategory].length) {
-            currentIndex = 0;
-        }
-
-        updateLightbox();
-    }
+function openLightbox(category,index){currentCategory=category;currentIndex=index;updateLightbox();lightbox.classList.add("show")}
+function updateLightbox(){lightboxImg.src=allImages[currentCategory][currentIndex];lightboxImg.alt=`${galleries[currentCategory].title} — Photo ${currentIndex+1}`}
+document.querySelector(".close").onclick=()=>lightbox.classList.remove("show");
+lightbox.onclick=e=>{if(e.target===lightbox)lightbox.classList.remove("show")};
+document.querySelector(".prev").onclick=e=>{e.stopPropagation();currentIndex=(currentIndex-1+allImages[currentCategory].length)%allImages[currentCategory].length;updateLightbox()};
+document.querySelector(".next").onclick=e=>{e.stopPropagation();currentIndex=(currentIndex+1)%allImages[currentCategory].length;updateLightbox()};
+document.addEventListener("keydown",e=>{
+    if(!lightbox.classList.contains("show"))return;
+    if(e.key==="Escape")lightbox.classList.remove("show");
+    if(e.key==="ArrowLeft"){currentIndex=(currentIndex-1+allImages[currentCategory].length)%allImages[currentCategory].length;updateLightbox()}
+    if(e.key==="ArrowRight"){currentIndex=(currentIndex+1)%allImages[currentCategory].length;updateLightbox()}
 });
