@@ -1,14 +1,22 @@
 // YOU LUKA — AUTOMATIC GALLERIES
-// Add numbered JPG/JPEG/PNG/WEBP files to the country folders.
-// No number needs to be changed here.
+// Current photos are also used as a fallback if GitHub API is temporarily unavailable.
+// Add numbered JPG/JPEG/PNG/WEBP files to a country folder later.
 
 const owner="YouLuka";
 const repository="You-Luka";
 const branch="main";
 
 const galleries={
-  ukraine:{path:"images/ukraine/",title:"Ukraine"},
-  turkey:{path:"images/turkey/",title:"Turkey"}
+  ukraine:{
+    path:"images/ukraine/",
+    title:"Ukraine",
+    fallback:["1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg","9.jpg","10.jpg","11.jpg","12.jpg","13.jpg","14.jpg","15.jpg","16.jpg","17.jpg","18.jpg","19.jpg","20.jpg","21.jpg","22.jpg","23.jpg","24.jpg","25.jpg","26.jpg","27.jpg","28.jpg","29.jpg","30.jpg","31.jpg","32.jpg","33.jpg","34.jpg","36.png"]
+  },
+  turkey:{
+    path:"images/turkey/",
+    title:"Turkey",
+    fallback:["1.jpg","2.jpg","3.jpg","4.jpg","5.jpg","6.jpg","7.jpg","8.jpg"]
+  }
 };
 
 const allImages={};
@@ -16,37 +24,55 @@ const lightbox=document.getElementById("lightbox");
 const lightboxImg=document.getElementById("lightbox-img");
 let currentCategory="",currentIndex=0;
 
-async function loadGallery(category){
+function rawUrl(category,file){
+  return `https://raw.githubusercontent.com/${owner}/${repository}/${branch}/${galleries[category].path}${encodeURIComponent(file).replace(/%2F/g,"/")}`;
+}
+
+function renderGallery(category,files){
   const gallery=document.getElementById(`${category}-gallery`);
   if(!gallery)return;
-  const config=galleries[category];
-  allImages[category]=[];
-  const url=`https://api.github.com/repos/${owner}/${repository}/contents/${config.path}?ref=${branch}`;
+  gallery.innerHTML="";
+  allImages[category]=files.map(file=>rawUrl(category,file));
 
+  files.forEach((file,index)=>{
+    const img=document.createElement("img");
+    img.src=rawUrl(category,file);
+    img.alt=`${galleries[category].title} — Photo ${index+1}`;
+    img.loading="lazy";
+    img.onerror=()=>img.remove();
+    img.onclick=()=>openLightbox(category,index);
+    gallery.appendChild(img);
+  });
+}
+
+async function loadGallery(category){
+  const config=galleries[category];
+
+  // Show the known photos immediately.
+  renderGallery(category,config.fallback);
+
+  // Then ask GitHub for the current folder contents.
   try{
-    const response=await fetch(url);
-    if(!response.ok)throw new Error("GitHub API error");
+    const url=`https://api.github.com/repos/${owner}/${repository}/contents/${config.path}?ref=${branch}`;
+    const response=await fetch(url,{cache:"no-store"});
+    if(!response.ok)throw new Error(`GitHub API ${response.status}`);
     const files=await response.json();
+
     const photos=files
       .filter(file=>file.type==="file" && /^\d+\.(jpe?g|png|webp)$/i.test(file.name))
-      .sort((a,b)=>parseInt(a.name)-parseInt(b.name));
+      .sort((a,b)=>parseInt(a.name)-parseInt(b.name))
+      .map(file=>file.name);
 
-    photos.forEach((file,index)=>{
-      const img=document.createElement("img");
-      img.src=file.download_url;
-      img.alt=`${config.title} — Photo ${index+1}`;
-      img.loading="lazy";
-      allImages[category].push(file.download_url);
-      img.onclick=()=>openLightbox(category,index);
-      gallery.appendChild(img);
-    });
-  }catch(error){console.error(`Could not load ${config.title}:`,error)}
+    if(photos.length)renderGallery(category,photos);
+  }catch(error){
+    console.warn(`Automatic update unavailable for ${config.title}; using current photos.`,error);
+  }
 }
 
 Object.keys(galleries).forEach(loadGallery);
 
 function openLightbox(category,index){
-  if(!allImages[category]?.length)return;
+  if(!allImages[category]?.[index])return;
   currentCategory=category;
   currentIndex=index;
   updateLightbox();
